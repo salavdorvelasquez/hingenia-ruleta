@@ -234,11 +234,16 @@ class HG_Ruleta_Data {
 		return (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . self::table_name() . ' WHERE claimed_at IS NOT NULL' );
 	}
 
-	/** URL de admin-post para reclamar (registra el clic y redirige a WhatsApp). */
+	/**
+	 * URL pública del frontend para reclamar el premio.
+	 * Se hace en frontend (init) y NO en admin-post.php a propósito:
+	 * algunos firewalls/hosts (LiteSpeed, Hostinger) bloquean llamadas
+	 * a wp-admin/admin-post.php con acciones que no conocen.
+	 */
 	public static function build_claim_url( $token ) {
 		return add_query_arg(
-			array( 'action' => 'hg_ruleta_claim', 't' => $token ),
-			admin_url( 'admin-post.php' )
+			array( 'hg_ruleta_claim' => '1', 't' => $token ),
+			home_url( '/' )
 		);
 	}
 

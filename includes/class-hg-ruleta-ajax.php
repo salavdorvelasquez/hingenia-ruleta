@@ -26,8 +26,21 @@ class HG_Ruleta_Ajax {
 		add_action( 'wp_ajax_hg_ruleta_spin', array( $this, 'handle_spin' ) );
 		// Sin _nopriv: solo usuarios logueados pueden girar.
 
-		add_action( 'admin_post_hg_ruleta_claim', array( $this, 'handle_claim' ) );
-		add_action( 'admin_post_nopriv_hg_ruleta_claim', array( $this, 'handle_claim' ) );
+		// Reclamo del premio en el frontend (init). NO usamos admin-post.php
+		// porque algunos firewalls/hosts bloquean acciones desconocidas ahí.
+		add_action( 'init', array( $this, 'maybe_handle_claim' ) );
+
+		// Compatibilidad: URLs antiguas de admin-post.php siguen funcionando.
+		add_action( 'admin_post_hg_ruleta_claim', array( $this, 'do_claim' ) );
+		add_action( 'admin_post_nopriv_hg_ruleta_claim', array( $this, 'do_claim' ) );
+	}
+
+	/** Detecta el reclamo en frontend y dispara el handler. */
+	public function maybe_handle_claim() {
+		if ( is_admin() || ! isset( $_GET['hg_ruleta_claim'] ) ) {
+			return;
+		}
+		$this->do_claim();
 	}
 
 	/** Gira la ruleta. */
@@ -88,7 +101,7 @@ class HG_Ruleta_Ajax {
 	}
 
 	/** Registra que el usuario hizo clic en "Reclamar" y redirige a WhatsApp. */
-	public function handle_claim() {
+	public function do_claim() {
 		$token = isset( $_GET['t'] ) ? sanitize_text_field( wp_unslash( $_GET['t'] ) ) : '';
 		if ( $token ) {
 			$row = HG_Ruleta_Data::get_spin_by_token( $token );
